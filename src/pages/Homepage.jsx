@@ -3,9 +3,7 @@ import { storage } from "../firebase";
 import { ref, uploadBytes, listAll, getDownloadURL } from "firebase/storage";
 import { v4 } from "uuid";
 import { useEffect } from "react";
-import { useNavigate } from "react-router-dom";
 export function Homepage() {
-  const navigate = useNavigate();
   const [imageUpload, setImageUpload] = useState(null);
   const [imageList, setImageList] = useState([]);
   const imageListRef = ref(storage, "media/");
@@ -13,9 +11,11 @@ export function Homepage() {
     try {
       if (imageUpload == null) return;
       const imageRef = ref(storage, `media/${imageUpload.name + v4()}`);
-      uploadBytes(imageRef, imageUpload).then(() => {
-        alert("image uploaded!!!!");
-        navigate("/");
+      uploadBytes(imageRef, imageUpload).then((snapshot) => {
+        getDownloadURL(snapshot.ref).then((url) => {
+          setImageList((prev) => [...prev], url);
+        });
+        // alert("image uploaded!!!!");
       });
     } catch (err) {
       console.log("image Failed!!!!");
@@ -33,11 +33,15 @@ export function Homepage() {
     });
   }, []);
 
+  const [showImage, setShowImage] = useState(false);
+  const handleImageClick = () => {
+    setShowImage(!showImage);
+  };
   return (
     <>
       <div>
         <div className="flex flex-col ">
-          <div className="  m-auto w-72 p-8">
+          <div className=" m-auto w-72 p-8">
             <input
               type="file"
               onChange={(event) => {
@@ -47,20 +51,26 @@ export function Homepage() {
           </div>
           <button
             onClick={uploadImage}
-            className="border w-44 m-auto p-2 hover:bg-yellow-100 shadow-md"
+            className="border w-44 m-auto p-2 hover:bg-yellow-200 shadow-md"
           >
             Upload Image
           </button>
         </div>
-
-        <div className="flex gap-2 justify-center   p-8">
-          {imageList.map((url) => {
-            return (
+        <div
+          className="flex gap-2 justify-center p-8"
+          onClick={handleImageClick}
+        >
+          {showImage ? (
+            imageList.map((url) => (
               <div key={v4()}>
                 <img className="w-64" src={url} />
               </div>
-            );
-          })}
+            ))
+          ) : (
+            <p className="cursor-pointer shadow-md p-4 hover:bg-sky-200">
+              Click here to show images
+            </p>
+          )}
         </div>
       </div>
     </>
